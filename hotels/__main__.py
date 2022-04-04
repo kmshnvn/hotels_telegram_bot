@@ -1,8 +1,12 @@
 import requests
 import telebot
 import json
+from decouple import config
 
-bot = telebot.TeleBot('5138350103:AAFmt04RrYlet0aGGDgpfYrTV1DbBPNQTrA')
+bot_api = config('BOT_API')
+site_api = config('SITE_API')
+
+bot = telebot.TeleBot(bot_api)
 
 
 @bot.message_handler(commands=['start', 'help'])
