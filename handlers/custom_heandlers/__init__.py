@@ -1,5 +1,3 @@
-from . import survey
+from . import price
 from . import bestdeal
-from . import highprice
-from . import lowprice
 from . import history
