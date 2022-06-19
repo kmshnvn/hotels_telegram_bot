@@ -6,40 +6,43 @@ import re
 from loguru import logger
 import translators as ts
 
+from loader import bot
 from config_data.config import headers, location_url, hotel_url, photo_url
 
 
 def check_data_api(hotel: Dict) -> Dict[str, Union[str, int]]:
-    """
-    Функция, проверяет данные, полученные от сайта.
+    """    Функция, проверяет данные, полученные от сайта.
 
     Возвращает словарь с данными отеля,
     если нет названия, id или при возникновении ошибки возвращает пустой словарь
-    :param hotel:
-    :return:
     """
     try:
         regular_ex: str = '\$\S{,20}'
+        pattern: str = '[ 0-9.,]{,10}'
+        word_pattern: str = '[^ 0-9.,]{,10}'
+        price_pattern: str = '\w[ 0-9.,]{,10}'
 
         address = hotel.get('address')
         price = hotel.get('ratePlan').get('price')
         guest_rating = hotel.get('guestReviews')
         hotel_id = hotel.get('id')
         hotel_name = hotel.get('name')
+        hotel_dest_from_center = None
 
         if price.get('old'):
+            hotel_cost = re.search(price_pattern, price['old']).group()
             hotel_price = price['old']
         elif price.get('current'):
+            hotel_cost = re.search(price_pattern, price['current']).group()
             hotel_price = price['current']
         else:
             raise IndexError
 
         for location in hotel['landmarks']:
             if location['label'] == 'City center':
-                hotel_dest_from_center = location['distance']
+                hotel_dest_from_center = float(re.search(pattern, location['distance']).group())
+                travel_measure = re.search(word_pattern, location['distance']).group()
                 break
-            else:
-                hotel_dest_from_center = None
 
         if address.get('streetAddress'):
             street = address['streetAddress']
@@ -86,11 +89,12 @@ def check_data_api(hotel: Dict) -> Dict[str, Union[str, int]]:
             'rating': hotel_rating,
             'total_reviews': hotel_reviews,
             'address': hotel_address,
+            'cost': hotel_cost,
             'price': hotel_price,
             'full_price': hotel_full_price,
-            'destination': hotel_dest_from_center
+            'destination': hotel_dest_from_center,
+            'travel_measure': travel_measure
         }
-
         return hotel_info
     except IndexError as error:
         logger.error(f'Ошибка поиска ключа {error}')
@@ -101,20 +105,18 @@ def check_data_api(hotel: Dict) -> Dict[str, Union[str, int]]:
 
 
 def request_to_api(url: str, querystring: Dict) -> True:
-    """
-    Функция, проверяет ответ от сервера
-
-    :param url:
-    :param querystring:
-    :return:
-    """
+    """    Функция, проверяет ответ от сервера    """
     try:
         response = requests.get(url, headers=headers, params=querystring, timeout=10)
 
         if response.status_code == requests.codes.ok:
             return True
+        elif response.status_code == 429:
+            raise ConnectionResetError(f'{response.status_code} - Закончился лимит запросов к API')
         else:
             raise ConnectionError(f'Ошибка {response.status_code} при запросе к API')
+    except ConnectionResetError as conn:
+        logger.error(conn)
     except ConnectionError as conn:
         logger.error(conn)
     except Exception as api_ex:
@@ -122,13 +124,9 @@ def request_to_api(url: str, querystring: Dict) -> True:
 
 
 def get_city_api(city: str) -> List:
-    """
-    Функция, выбирает все варианты городов по названию
+    """    Функция, выбирает все варианты городов по названию
 
     Город пользователя переводится на англ язык и ищет данный город на сайте
-
-    :param city:
-    :return:
     """
     try:
         city: str = ts.google(city, from_language='ru', to_language='en')
@@ -161,16 +159,7 @@ def get_city_api(city: str) -> List:
 
 
 def api_get_hotels(city_id: int, sorting: str, check_in, check_out, max_hotels_number: int) -> List:
-    """
-    Функция, ищет отели в выбранном городе, возвращает список
-
-    :param city_id:
-    :param sorting:
-    :param check_in:
-    :param check_out:
-    :param max_hotels_number:
-    :return:
-    """
+    """    Функция, ищет отели в выбранном городе, возвращает список    """
     try:
         querystring: Dict[str, Union[str, int]] = {
             "destinationId": city_id,
@@ -193,12 +182,13 @@ def api_get_hotels(city_id: int, sorting: str, check_in, check_out, max_hotels_n
 
             if new:
                 for element in new:
-                    print(element)
 
                     hotel_info = check_data_api(element)
                     if hotel_info != {}:
                         hotels.append(hotel_info)
-            return hotels
+
+            sorted_hotels = sorted(hotels, key=lambda row: float(row['cost']))
+            return sorted_hotels
         else:
             raise ConnectionError
     except ConnectionError:
@@ -208,15 +198,70 @@ def api_get_hotels(city_id: int, sorting: str, check_in, check_out, max_hotels_n
         logger.error(f'Ошибка при обработке поиска отелей - {error}')
 
 
+def api_get_bestdeal(city_id: int, sorting: str, check_in, check_out, hotel_number,
+                     min_price, max_price, min_distance, max_distance, message) -> List:
+    """    Функция, ищет отели в выбранном городе, возвращает список    """
+    try:
+        page = 0
+        hotels: List[Dict[str, int]] = list()
+
+        while True:
+            if len(hotels) >= hotel_number:
+                break
+
+            page += 1
+
+            if page % 2 == 0:
+                bot.send_message(message.chat.id, 'Еще собираю информацию')
+
+            querystring: Dict[str, Union[str, int]] = {
+                "destinationId": city_id,
+                "pageNumber": page,
+                "pageSize": "25",
+                "checkIn": check_in,
+                "checkOut": check_out,
+                "adults1": "1",
+                "priceMin": min_price,
+                "priceMax": max_price,
+                "sortOrder": sorting,
+                "locale": "en_US",
+                "currency": "USD"}
+
+            if request_to_api(hotel_url, querystring):
+                response = requests.request("GET", hotel_url, headers=headers, params=querystring, timeout=10)
+
+                suggestions = json.loads(response.text)
+                new = suggestions.get('data').get('body').get('searchResults').get('results')
+
+                if new:
+                    for element in new:
+
+                        hotel_info = check_data_api(element)
+                        if hotel_info != {}:
+                            try:
+                                distance = hotel_info['destination']
+                                if min_distance <= distance <= max_distance:
+                                    hotels.append(hotel_info)
+
+                            except Exception as ex:
+                                logger.error(f'Не смог найти паттерн {ex}')
+
+            else:
+                raise ConnectionError
+
+        sorted_hotels = sorted(hotels, key=lambda row: (row['destination'], float(row['cost'])))
+        return sorted_hotels
+    except ConnectionError:
+        logger.error(f'Ошибка соединения')
+        return []
+    except Exception as error:
+        logger.error(f'Ошибка при обработке поиска отелей - {error}')
+
+
 def api_get_photo(hotel_id: int, max_photo: int) -> List[str]:
-    """
-    Функция, получает фотографии отелей
+    """    Функция, получает фотографии отелей
 
     Принимает на id отеля и сколько фотографий нужно вывести,
-
-    :param hotel_id:
-    :param max_photo:
-    :return:
     """
     try:
         querystring = {"id": hotel_id}
@@ -231,7 +276,6 @@ def api_get_photo(hotel_id: int, max_photo: int) -> List[str]:
             size = f"{new[0]['sizes'][2]['suffix']}"
             if size:
                 for element in new[:max_photo]:
-                    print(element)
                     url = element.get('baseUrl')
                     if url:
                         new_url = url.replace('{size}', size)

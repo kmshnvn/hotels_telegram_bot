@@ -11,10 +11,8 @@ def bot_help(message: Message) -> None:
 
     Активируется в момент написания пользователем /help.
 
-    :param message:
-    :return:
     """
     text = [f'/{command} - {desk}' for command, desk in DEFAULT_COMMANDS]
-    bot.send_message(message.from_user.id,
+    bot.send_message(message.chat.id,
                      'Используй мои команды, чтобы найти подходящий отель:\n\n'
                      + '\n'.join(text))
