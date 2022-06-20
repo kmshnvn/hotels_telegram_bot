@@ -13,10 +13,14 @@ def bot_start(message: Message) -> None:
     Создает БД, если такой не было раньше
 
     """
-    bot.send_message(message.from_user.id,
-                     f"Привет, {message.from_user.full_name}!\n"
-                     f"\nЯ бот, который поможет тебе подобрать отель. Нажми /help, чтобы узнать мои команды"
-                     )
+    bot.send_message(
+        chat_id=message.from_user.id,
+        text=f"Привет, {message.from_user.full_name}!\n"
+             f"\nЯ бот, который поможет тебе подобрать отель. Нажми /help, чтобы узнать мои команды\n"
+             f"\n*К сожалению, из-за некоторых ограничений поиск по России не доступен*",
+        parse_mode='Markdown'
+    )
+    logger.info(f'{message.chat.id} - команда start')
     if not User.get_or_none(telegram_id=message.from_user.id):
         User.create(username=message.from_user.full_name, telegram_id=message.from_user.id, hotels={1: 'url', 2: 'url'})
         logger.info('Создал БД пользователя')

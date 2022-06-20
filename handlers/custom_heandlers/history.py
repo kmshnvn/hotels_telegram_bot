@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import List, Dict
 
 from telebot.types import Message
+from loguru import logger
 
 from loader import bot
 from database.database import db_get_history
@@ -19,6 +20,8 @@ def text_history(query: Dict, date, message: Message) -> str:
     После этого возвращает окончательный текст.
 
     """
+    logger.info(f'{message.chat.id} - history.py | составляю сообщение истории использования')
+
     text_length: int = 2000
     text: str = ''
 
@@ -79,6 +82,8 @@ def full_history_message(message: Message, query: Dict,
     Принимает сообщение пользователя, словарь с данными клиента из БД,
     список со всеми датами, длину списка дат и с какого начинать выводить
     """
+    logger.info(f'{message.chat.id} - history.py | Вывожу историю пользования ботом по дням')
+
     for date in full_dates[start:end]:
         sleep(1)
         bot.send_message(
@@ -100,6 +105,8 @@ def history(message: Message) -> None:
     показывает историю за сегодняшний день, иначе выводит историю за последние 3 дня,
     в который пользователь использовал бота
     """
+    logger.info(f'{message.chat.id} - history.py | выбор команды /history')
+
     today_date = datetime.now().date()
     query = db_get_history(message.chat.id)
 
@@ -144,6 +151,8 @@ def full_history(message: Message):
     что пользователь уже увидел
 
     """
+    logger.info(f'{message.chat.id} - history.py | вывод всей истории пользования')
+
     today_date = datetime.now().date()
     query = db_get_history(message.chat.id)
 

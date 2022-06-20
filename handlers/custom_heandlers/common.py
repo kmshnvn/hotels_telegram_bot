@@ -4,7 +4,7 @@ from telebot.types import Message, CallbackQuery, InputMediaPhoto
 from loguru import logger
 
 from loader import bot
-from states.states import SortPrice
+from database.states import SortPrice
 from database.model import User as user
 from database.database import db_get_user, db_get_value, db_save_data
 from utils.funcs import hotel_description
@@ -20,6 +20,8 @@ def price(message: Message) -> None:
      Записывает данную команду, а также максимальное кол-во отелей и фотографий
      в БД, после этого запрашивает город поиска
     """
+    logger.info(f'{message.chat.id} - common.py | выбор команды {message.text}')
+
     if message.text == '/lowprice':
         sorting: str = 'PRICE'
     elif message.text == '/highprice':
@@ -44,6 +46,8 @@ def price(message: Message) -> None:
 @bot.message_handler(state=SortPrice.city)
 def check_city(message: Message) -> None:
     """    Функция, уточняет у пользователя город поиска через inline-клавиатуру    """
+    logger.info(f'{message.chat.id} - common.py | поиск и утонение города - {message.text}')
+
     if message.text.isalpha():
         bot.send_chat_action(message.chat.id, 'typing')
         city_list: List[Dict] = get_city_api(message.text)
@@ -82,6 +86,8 @@ def callback_city(call: CallbackQuery) -> None:
             message_id=call.message.message_id
             )
 
+        logger.info(f'{call.message.chat.id} - common.py | выбран город {search_city}')
+
         try:
             new = user.get(telegram_id=call.message.chat.id)
             new.search_city = search_city
@@ -104,6 +110,8 @@ def get_hotel_numbers(message: Message) -> None:
     """    Функция, проверяет ввод пользователя и запрашивает вывод фото отеля
 
     """
+    logger.info(f'{message.chat.id} - common.py | кол-во отелей для вывода {message.text}')
+
     try:
         if message.text.isdigit():
             max_hotel_count: int = db_get_value(message.chat.id, 'hotels_count')
@@ -156,6 +164,7 @@ def callback_photo(call: CallbackQuery) -> None:
             )
             bot.send_message(call.message.chat.id, 'Какое кол-во фотографий вывести?')
             bot.set_state(call.message.chat.id, SortPrice.photo_numbers)
+            logger.info(f'{call.message.chat.id} - common.py | Вывести фото')
 
         elif answer.lower() == 'нет':
             bot.edit_message_text(
@@ -163,6 +172,7 @@ def callback_photo(call: CallbackQuery) -> None:
                 message_id=call.message.message_id,
                 text=f'Фото не нужны'
             )
+            logger.info(f'{call.message.chat.id} - common.py | Фото не нужны')
 
             try:
                 new = user.get(telegram_id=call.message.chat.id)
@@ -188,6 +198,8 @@ def data_photos(message: Message) -> None:
     и активирует функцию вывода результата
 
     """
+    logger.info(f'{message.chat.id} - common.py | вывести фото - {message.text}')
+
     try:
         if message.text.isdigit():
             max_photo_count: int = db_get_value(message.chat.id, 'photo_count')
@@ -232,6 +244,8 @@ def output_data(message: Message) -> None:
     выводит фотографии при необходимости
 
     """
+    logger.info(f'{message.chat.id} - common.py | вывожу информацию по отелям')
+
     hotels_for_db: Dict[str, str] = {}
     try:
         bot.send_message(message.chat.id, 'Готовлю информацию, ожидайте')
@@ -264,6 +278,7 @@ def output_data(message: Message) -> None:
                 check_out=user_info['check_out'],
                 max_hotels_number=max_hotel_count
             )
+        logger.info(f'Количество отлей найдено {len(hotel_list_info)}')
         if not hotel_list_info:
             bot.send_message(chat_id=message.chat.id,
                              text='🤕Не смог собрать информацию по отелям, давай попробуем еще раз')

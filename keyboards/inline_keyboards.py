@@ -53,7 +53,6 @@ def all_commands() -> InlineKeyboardMarkup:
     keyboard = InlineKeyboardMarkup()
 
     for command in DEFAULT_COMMANDS:
-        print(command[1], '/'+command[0])
         keyboard.add(InlineKeyboardButton(
             text=command[1],
             callback_data='/'+command[0]))

@@ -6,7 +6,7 @@ from telebot.types import Message, CallbackQuery
 
 from loader import bot
 from database.model import User
-from states.states import SortPrice
+from database.states import SortPrice
 from database.database import db_get_value
 
 
@@ -21,6 +21,8 @@ def check_in(message: Message) -> None:
                      f"Укажите дату заезда:\n"
                      f"\nВыберите {RUSTEP[step]}",
                      reply_markup=calendar)
+
+    logger.info(f'{message.chat.id} - выбор даты заезда')
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=1))
@@ -73,6 +75,8 @@ def check_out(message: Message) -> None:
                      f"Укажите дату выезда:\n"
                      f"\nВыберите {RUSTEP[step]}",
                      reply_markup=calendar)
+
+    logger.info(f'{message.chat.id} - выбор даты заезда')
 
 
 @bot.callback_query_handler(func=DetailedTelegramCalendar.func(calendar_id=2))

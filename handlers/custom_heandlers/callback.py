@@ -16,6 +16,8 @@ def callback_city(call: CallbackQuery) -> None:
     и редактирует свое сообщение
 
     """
+    logger.info(f'{call.message.chat.id} - callback.py | меню из inline клавиатуры')
+
     if call.data == '/lowprice' or call.data == '/highprice' or call.data == '/bestdeal':
         bot.edit_message_text(
             chat_id=call.message.chat.id,
@@ -49,6 +51,8 @@ def callback_photo(call: CallbackQuery) -> None:
     Принимает строку, которая начинается на "answer#"
     Бот редактирует свое сообщение на ответ пользователя.
     """
+    logger.info(f'{call.message.chat.id} - callback.py | Выбор полной истории')
+
     try:
         callback, answer = call.data.split('#')
 

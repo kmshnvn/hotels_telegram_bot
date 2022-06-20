@@ -2,7 +2,7 @@ from loguru import logger
 
 from loader import bot
 from telebot.types import Message
-from states.states import SortPrice
+from database.states import SortPrice
 from database.model import User as user
 
 
@@ -14,6 +14,8 @@ def survey(message: Message) -> None:
     записываются в БД, после этого запрашивается расстояние до центра
 
     """
+    logger.info(f'{message.chat.id} - bestdeal.py | Минимальная и максимальная цена')
+
     min_price: str = '0'
     max_price: str = '0'
     check_variables = False
@@ -65,6 +67,8 @@ def distance(message: Message) -> None:
     записываются в БД, после этого запрашивается сколько отелей вывести
 
     """
+    logger.info(f'{message.chat.id} - bestdeal.py | Минимальное и максимальное расстояние')
+
     min_distance: str = '0'
     max_distance: str = '0'
     check_variables = False

@@ -28,6 +28,7 @@ def check_data_api(hotel: Dict) -> Dict[str, Union[str, int]]:
         hotel_id = hotel.get('id')
         hotel_name = hotel.get('name')
         hotel_dest_from_center = None
+        travel_measure = None
 
         if price.get('old'):
             hotel_cost = re.search(price_pattern, price['old']).group()
@@ -179,14 +180,15 @@ def api_get_hotels(city_id: int, sorting: str, check_in, check_out, max_hotels_n
 
             suggestions = json.loads(response.text)
             new = suggestions.get('data').get('body').get('searchResults').get('results')
-
+            print(suggestions)
             if new:
+                print(new)
                 for element in new:
 
                     hotel_info = check_data_api(element)
                     if hotel_info != {}:
                         hotels.append(hotel_info)
-
+                    print(element)
             sorted_hotels = sorted(hotels, key=lambda row: float(row['cost']))
             return sorted_hotels
         else:
@@ -259,9 +261,9 @@ def api_get_bestdeal(city_id: int, sorting: str, check_in, check_out, hotel_numb
 
 
 def api_get_photo(hotel_id: int, max_photo: int) -> List[str]:
-    """    Функция, получает фотографии отелей
+    """    Функция, собирает ссылки фотографий отелей
 
-    Принимает на id отеля и сколько фотографий нужно вывести,
+    Принимает id отеля и сколько фотографий нужно вывести.
     """
     try:
         querystring = {"id": hotel_id}

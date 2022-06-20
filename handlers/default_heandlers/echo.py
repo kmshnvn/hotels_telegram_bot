@@ -1,5 +1,7 @@
 from telebot.types import Message
 
+from loguru import logger
+
 from loader import bot
 
 
@@ -10,3 +12,4 @@ def bot_echo(message: Message):
         chat_id=message.chat.id,
         text=f"Чтобы узнать подробнее о боте: /help"
         )
+    logger.info(f'{message.chat.id} - echo.py | команда echo {message.text}')
