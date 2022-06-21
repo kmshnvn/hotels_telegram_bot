@@ -25,3 +25,5 @@ headers = {
 location_url = "https://hotels4.p.rapidapi.com/locations/v2/search"
 hotel_url = "https://hotels4.p.rapidapi.com/properties/list"
 photo_url = "https://hotels4.p.rapidapi.com/properties/get-hotel-photos"
+
+RUSTEP = {'y': 'год', 'm': 'месяц', 'd': 'день'}

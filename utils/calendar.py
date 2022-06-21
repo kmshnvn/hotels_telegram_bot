@@ -1,12 +1,13 @@
 from datetime import date, timedelta
 
 from loguru import logger
-from telegram_bot_calendar import DetailedTelegramCalendar, RUSTEP
+from telegram_bot_calendar import DetailedTelegramCalendar
 from telebot.types import Message, CallbackQuery
 
 from loader import bot
 from database.model import User
 from database.states import SortPrice
+from config_data.config import RUSTEP
 from database.database import db_get_value
 
 
@@ -85,6 +86,7 @@ def callback_check_in(call: CallbackQuery) -> None:
 
     В конце запрашивает у пользователя кол-во отелей для вывода
     """
+
     check_out_date = db_get_value(call.message.chat.id, 'check_in') + timedelta(days=1)
 
     result, key, step = DetailedTelegramCalendar(
