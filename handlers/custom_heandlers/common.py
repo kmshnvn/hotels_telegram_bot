@@ -38,7 +38,7 @@ def price(message: Message) -> None:
         new.save()
     except Exception as error:
         logger.error(f'Ошибка записи в БД - {error}')
-    bot.send_message(message.chat.id, 'В каком городе ищем отель?')
+    bot.send_message(message.chat.id, 'В каком городе ищем отель?\n\nМожно ввести на 🇷🇺 и 🇺🇸 языке')
     bot.set_state(message.chat.id, SortPrice.city)
 
 
@@ -58,7 +58,7 @@ def check_city(message: Message) -> None:
                              reply_markup=city_markup(city_list, command))
 
         else:
-            bot.send_message(message.chat.id, 'Город не найден. Введите город поиска')
+            bot.send_message(message.chat.id, 'Город не найден. Введите город поиска на 🇷🇺 или 🇺🇸 языке:')
     else:
         bot.send_message(message.chat.id, f'Город должен содержать только буквы')
 
@@ -101,7 +101,7 @@ def callback_city(call: CallbackQuery) -> None:
     except Exception as ex:
         logger.error(ex)
         text: str = '🤬Что-то пошло не так, при выборе города. Давайте попробуем еще раз.\n' \
-                    'Введите город поиска: '
+                    'Введите город поиска на 🇷🇺 или 🇺🇸 языке: '
         bot.send_message(call.message.chat.id, text)
 
 
@@ -284,7 +284,7 @@ def output_data(message: Message) -> None:
                              text='🤕Не смог собрать информацию по отелям, давай попробуем еще раз')
             bot.set_state(message.chat.id, SortPrice.start)
             bot.send_message(chat_id=message.chat.id,
-                             text='Введите город')
+                             text='Введите город на 🇷🇺 или 🇺🇸 языке')
 
         else:
             try:
@@ -327,7 +327,7 @@ def output_data(message: Message) -> None:
                                  text='🤬Возникла ошибка при выводе текста')
                 bot.set_state(message.chat.id, SortPrice.start)
                 bot.send_message(chat_id=message.chat.id,
-                                 text='Введите город')
+                                 text='Введите город на 🇷🇺 или 🇺🇸 языке')
 
         db_save_data(user_info, hotels_for_db)
         bot.send_message(chat_id=message.chat.id,
@@ -341,4 +341,4 @@ def output_data(message: Message) -> None:
                          text='🤬Не смог сделать вывод информации')
         bot.set_state(message.chat.id, SortPrice.start)
         bot.send_message(chat_id=message.chat.id,
-                         text='Введите город')
+                         text='Введите город на 🇷🇺 или 🇺🇸 языке')
