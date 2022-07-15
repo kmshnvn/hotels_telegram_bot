@@ -206,9 +206,18 @@ def api_get_bestdeal(city_id: int, sorting: str, check_in, check_out, hotel_numb
     try:
         page = 0
         hotels: List[Dict[str, int]] = list()
+        max_search_page = 16
+        empty_search_page = 5
 
         while True:
-            if len(hotels) >= hotel_number:
+            logger.info(f'Собрано {len(hotels)} отелей')
+            if len(hotels) >= hotel_number or page == max_search_page:
+                break
+
+            if page == empty_search_page and hotels == []:
+                bot.send_message(
+                    chat_id=message.chat.id,
+                    text='По такому запросу ничего не нашел')
                 break
 
             page += 1
@@ -234,14 +243,17 @@ def api_get_bestdeal(city_id: int, sorting: str, check_in, check_out, hotel_numb
 
                 suggestions = json.loads(response.text)
                 new = suggestions.get('data').get('body').get('searchResults').get('results')
+                logger.info(new)
 
                 if new:
                     for element in new:
-
+                        logger.info(element)
                         hotel_info = check_data_api(element)
+                        logger.info(hotel_info)
                         if hotel_info != {}:
                             try:
                                 distance = hotel_info['destination']
+                                logger.info(distance)
                                 if min_distance <= distance <= max_distance:
                                     hotels.append(hotel_info)
 
